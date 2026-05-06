@@ -150,3 +150,96 @@ sudo timedatectl set-timezone Asia/Jakarta
 # Install useful tools
 sudo apt install curl wget git htop net-tools
 ```
+## 2.File Server
+
+Panduan ini membahas cara setup file server dengan Samba di Debian 12.
+
+### 2.1 Install Samba
+
+```bash
+su -
+apt update
+apt install -y samba smbclient cifs-utils
+```
+
+### 2.2 Buat Folder File Server
+
+```bash
+mkdir -p /home/nanzz/fileserver/dokumen
+mkdir -p /home/nanzz/fileserver/foto
+mkdir -p /home/nanzz/fileserver/video
+mkdir -p /home/nanzz/fileserver/backup
+chown -R nobody:nogroup /home/nanzz/fileserver
+chmod -R 777 /home/nanzz/fileserver
+```
+
+### 2.3 Konfigurasi Samba
+
+```bash
+cp /etc/samba/smb.conf /etc/samba/smb.conf.bak
+nano /etc/samba/smb.conf
+```
+
+Isi konfigurasi:
+
+```ini
+[global]
+   workgroup = WORKGROUP
+   server string = File Server
+   netbios name = FILESERVER
+   security = user
+   map to guest = bad user
+   create mask = 0775
+   directory mask = 0775
+
+[NanzFileServer]
+   path = /home/nanzz/fileserver
+   browseable = yes
+   read only = no
+   guest ok = yes
+   force user = nobody
+```
+
+### 2.4 Aktifkan Service
+
+```bash
+systemctl enable smbd nmbd
+systemctl start smbd nmbd
+systemctl restart smbd
+```
+
+### 2.5 Tambah User (Opsional)
+
+```bash
+useradd -M -s /sbin/nologin namauser
+smbpasswd -a namauser
+smbpasswd -e namauser
+pdbedit -L
+```
+
+### 2.6 Cara Mengakses
+
+| OS | Cara |
+|----|------|
+| Windows | `\\10.25.10.51` |
+| Mac | `smb://10.25.10.51` |
+| Linux | `smb://10.25.10.51` |
+
+### 2.7 Troubleshooting
+
+```bash
+systemctl status smbd
+ss -tlnp | grep -E ":445|:139"
+tail -f /var/log/samba/log.smbd
+systemctl restart smbd
+```
+
+### 2.8 Perintah Penting
+
+| Perintah | Fungsi |
+|---------|-------|
+| `testparm` | Test konfigurasi |
+| `smbpasswd -a user` | Tambah user |
+| `smbclient -L localhost` | List share |
+
+## 3.Web Server
