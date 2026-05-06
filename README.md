@@ -243,3 +243,373 @@ systemctl restart smbd
 | `smbclient -L localhost` | List share |
 
 ## 3.Web Server
+
+Panduan setup web server dengan Nginx & Apache di Debian 12.
+
+### 3.1 Install Nginx
+
+```bash
+su -
+apt update
+apt install -y nginx
+```
+
+### 3.2 Konfigurasi Nginx
+
+```bash
+nano /etc/nginx/nginx.conf
+```
+
+### 3.3 Start Service
+
+```bash
+systemctl enable nginx
+systemctl start nginx
+systemctl status nginx
+```
+
+### 3.4 Buat Virtual Host
+
+```bash
+mkdir -p /var/www/example.com
+nano /etc/nginx/sites-available/example.com
+ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
+nginx -t
+systemctl restart nginx
+```
+
+## 4.CTFd (Capture The Flag Platform)
+
+Panduan install CTFd dari GitHub dengan Docker.
+
+### 4.1 Persiapan Sistem
+
+| Komponen | Minimal | Rekomendasi |
+|----------|---------|------------|
+| OS | Ubuntu 20.04+ / Debian 12 | Ubuntu 22.04 |
+| RAM | 2 GB | 4 GB |
+| CPU | 2 core | 4 core |
+| Disk | 20 GB | 40 GB |
+| Docker | 20.10+ | Latest |
+
+### 4.2 Install Docker
+
+```bash
+# Update & install dependencies
+apt update
+apt install -y ca-certificates curl gnupg lsb-release
+
+# Add Docker GPG key
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Add Docker repository
+echo "deb [arch=$(dpkg --print-architecture) https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker
+apt update
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Enable & start Docker
+systemctl enable docker
+systemctl start docker
+
+# Add user to docker group
+usermod -aG docker admin
+```
+
+### 4.3 Install Git & Clone CTFd
+
+```bash
+# Install git
+apt install -y git
+
+# Clone CTFd dari GitHub
+cd /opt
+git clone https://github.com/CTFd/CTFd.git
+cd CTFd
+
+# Checkout versi stabil (opsional)
+git checkout 3.9.0  # atau versi lain
+```
+
+### 4.4 Konfigurasi Environment
+
+```bash
+# Buat file .env
+nano .env
+```
+
+Isi dengan:
+
+```env
+UPLOAD_FOLDER=/var/uploads
+DATABASE_URL=mysql+pymysql://ctfd:ctfd_password@db/ctfd
+REDIS_URL=redis://cache:6379
+WORKERS=1
+WORKER_TIMEOUT=600
+LOG_FOLDER=/var/log/CTFd
+ACCESS_LOG=-
+ERROR_LOG=-
+REVERSE_PROXY=true
+MAX_CONTENT_LENGTH=104857600
+SECRET_KEY=generate_secret_key_anda
+```
+
+**Buat SECRET_KEY:**
+```bash
+openssl rand -hex(32)
+# Hasilkan: abcd1234... (copy hasil ini ke SECRET_KEY)
+```
+
+### 4.5 Konfigurasi docker-compose.yml
+
+```bash
+# Edit docker-compose.yml
+nano docker-compose.yml
+```
+
+Isi lengkap:
+
+```yaml
+version: '3'
+
+services:
+  ctfd:
+    image: ctfd/ctfd
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - UPLOAD_FOLDER=/var/uploads
+      - DATABASE_URL=mysql+pymysql://ctfd:ctfd_password@db/ctfd
+      - REDIS_URL=redis://cache:6379
+      - WORKERS=1
+      - WORKER_TIMEOUT=600
+      - LOG_FOLDER=/var/log/CTFd
+      - ACCESS_LOG=-
+      - ERROR_LOG=-
+      - REVERSE_PROXY=true
+      - MAX_CONTENT_LENGTH=104857600
+      - SECRET_KEY=YOUR_SECRET_KEY_HERE
+    volumes:
+      - ctfd_data:/var/uploads
+      - ctfd_logs:/var/log/CTFd
+    depends_on:
+      - db
+      - cache
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:stable-alpine
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./conf/nginx:/etc/nginx/conf.d
+    depends_on:
+      - ctfd
+    networks:
+      - internal
+
+  db:
+    image: mariadb:10.11
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=root_password
+      - MARIADB_USER=ctfd
+      - MARIADB_PASSWORD=ctfd_password
+      - MARIADB_DATABASE=ctfd
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - internal
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
+
+  cache:
+    image: redis:4
+    restart: always
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  ctfd_data:
+  ctfd_logs:
+  db_data:
+```
+
+### 4.6 Buat Folder Config Nginx
+
+```bash
+mkdir -p conf/nginx
+nano conf/nginx/http.conf
+```
+
+Isi:
+
+```nginx
+events {
+    worker_connections 1024;
+}
+
+http {
+    upstream app_servers {
+        server ctfd:8000;
+    }
+
+    server {
+        listen 80;
+        server_name _;
+        
+        client_max_body_size 100M;
+        gzip on;
+
+        location / {
+            proxy_pass http://app_servers;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Host $server_name;
+        }
+
+        location /events {
+            proxy_pass http://app_servers;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            chunked_transfer_encoding off;
+            proxy_buffering off;
+            proxy_cache off;
+        }
+    }
+}
+```
+
+### 4.7 Jalankan CTFd
+
+```bash
+# Pastikan di folder CTFd
+cd /opt/CTFd
+
+# Pull & run
+docker-compose up -d
+
+# Cek status
+docker-compose ps
+
+# Lihat logs
+docker-compose logs -f ctfd
+```
+
+### 4.8 Setup Pertama (Setup Wizard)
+
+1. Buka browser ke `http://IP_SERVER:8000` atau `http://IP_SERVER:80`
+
+2. Klik **"Setup"**
+
+3. Isi form:
+   | Field | Nilai |
+   |-------|-------|
+   | Admin Email | admin@ctfd.local |
+   | Password | (password kuat) |
+   | Server Name | CTFd Anda |
+   | Admin Team | Admin |
+
+4. Klik **Submit**
+
+### 4.9 Konfigurasi Tambahan
+
+#### Upload Size (100MB)
+```yaml
+# docker-compose.yml
+MAX_CONTENT_LENGTH=104857600
+
+# conf/nginx/http.conf
+client_max_body_size 100M;
+```
+
+#### Email Notification
+```env
+# .env
+MAIL_ENABLED=true
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=true
+MAIL_USERNAME=email@gmail.com
+MAIL_PASSWORD=app_password
+```
+
+#### HTTPS/SSL
+```bash
+# Install certbot
+apt install certbot python3-certbot-nginx
+
+# Get SSL
+certbot --nginx -d domain.com
+
+# Auto renew
+certbot renew --dry-run
+```
+
+### 4.10 Perintah Penting
+
+```bash
+# Start CTFd
+docker-compose up -d
+
+# Stop CTFd
+docker-compose down
+
+# Restart
+docker-compose restart ctfd
+
+# Lihat logs
+docker-compose logs -f
+
+# Update CTFd
+git fetch origin
+git checkout 3.10.0
+docker-compose pull
+docker-compose up -d
+
+# Backup database
+docker-compose exec db mysqldump -u root -p ctfd > backup_ctfd.sql
+
+# Restore database
+docker-compose exec -T db mysql -u root -p ctfd < backup_ctfd.sql
+```
+
+### 4.11 Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Can't access CTFd | Cek port: `docker-compose ps` |
+| Upload Gagal | Tambah MAX_CONTENT_LENGTH |
+| Error Database | Cek DATABASE_URL di .env |
+| Slow Performance | Tambah WORKERS=2+ |
+| 502 Error | Cek logs: `docker-compose logs nginx` |
+
+### 4.12 Keamanan Dasar
+
+```bash
+# Ganti Secrets
+# 1. Generate new SECRET_KEY
+openssl rand -hex(32)
+
+# 2. Update .env
+nano .env
+
+# 3. Restart
+docker-compose restart
+
+# Batasi akses port
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw enable
+```
+
