@@ -8,7 +8,7 @@
 ## Daftar Isi
 
 1. [Penginstalan Debian 12](#1.Persiapan-penginstalan-debian)
-2. [File Server](#2.File-Server)
+2. [File Server](##2.File-Server)
 3. [Web Server](#3.Web-Server)
 4. [Mail Server](#4.Mail-Server)
 
