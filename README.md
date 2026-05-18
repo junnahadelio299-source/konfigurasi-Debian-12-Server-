@@ -7,14 +7,14 @@
 
 ## Daftar Isi
 
-1. [Penginstalan Debian 12](#1.Persiapan-penginstalan-debian)
+1. [Penginstalan Debian 12](#1-Persiapan-penginstalan-debian)
 2. [File Server](#2-File-Server)
-3. [Web Server](#3.Web-Server)
-4. [Mail Server](#4.Mail-Server)
+3. [Web Server](#3-Web-Server)
+4. [Mail Server](#4-Mail-Server)
 
 ---
 
-## 1.Persiapan penginstalan debian
+## 1. Persiapan penginstalan debian
 
 ### 1.1 Sistem Minimal yang Dibutuhkan
 
@@ -256,7 +256,7 @@ systemctl restart smbd
 | `smbpasswd -a user` | Tambah user |
 | `smbclient -L localhost` | List share |
 
-## 3.Web Server
+## 3. Web Server
 
 Panduan setup web server dengan Nginx & Apache di Debian 12.
 
