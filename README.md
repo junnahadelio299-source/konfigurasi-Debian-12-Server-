@@ -252,27 +252,30 @@ systemctl restart smbd
 
 Panduan setup web server dengan Nginx & Apache di Debian 12.
 
-### 3.1 Install Nginx
+### 3.1 Install Apache2
 
 ```bash
-su -
 apt update
-apt install -y nginx
+apt install -y apache2
 ```
 
-### 3.2 Konfigurasi Nginx
+### 3.2 Start Service
 
 ```bash
-nano /etc/nginx/nginx.conf
+systemctl enable apache2
+systemctl start apache2
+systemctl status apache2
 ```
 
-### 3.3 Start Service
+### 3.3 Cek Web Server
 
-```bash
-systemctl enable nginx
-systemctl start nginx
-systemctl status nginx
+Buka browser:
+
+```text
+http://IP_SERVER
 ```
+
+Jika muncul halaman Apache2 default berarti berhasil.
 
 ### 3.4 Buat Virtual Host
 
@@ -405,18 +408,6 @@ services:
     depends_on:
       - db
       - cache
-    networks:
-      - internal
-
-  nginx:
-    image: nginx:stable-alpine
-    restart: always
-    ports:
-      - "80:80"
-    volumes:
-      - ./conf/nginx:/etc/nginx/conf.d
-    depends_on:
-      - ctfd
     networks:
       - internal
 
