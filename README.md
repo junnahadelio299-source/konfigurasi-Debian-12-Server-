@@ -743,7 +743,7 @@ systemctl reload apache2
 Buka:
 
 ```
-http://10.25.10.150/roundcube
+http://ipserver/roundcube
 ```
 
 Login dengan:
