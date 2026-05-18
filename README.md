@@ -524,3 +524,4 @@ ufw allow 443/tcp
 ufw enable
 ```
 
+## 4. Mail Server
