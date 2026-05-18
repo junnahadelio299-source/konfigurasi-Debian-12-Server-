@@ -183,21 +183,13 @@ nano /etc/samba/smb.conf
 Isi konfigurasi:
 
 ```ini
-[global]
-   workgroup = WORKGROUP
-   server string = File Server
-   netbios name = FILESERVER
-   security = user
-   map to guest = bad user
-   create mask = 0775
-   directory mask = 0775
-
 [share]
-   path = /home/nanzz/fileserver
-   browseable = yes
-   read only = no
+   path = /home/share
+   writable = yes
+   create mask = 0777
+   directory mask = 0777
+   public = no
    guest ok = yes
-   force user = nobody
 ```
 
 ### 2.4 Aktifkan Service
