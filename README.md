@@ -715,7 +715,7 @@ Sesuaikan bagian berikut:
 
 ```php
 $config['imap_host'] = '127.0.0.1:143';
-$config['smtp_host'] = '127.0.0.1:25';
+$config['smtp_host'] = '127.0.0.1';
 
 $config['smtp_user'] = '%u';
 $config['smtp_pass'] = '%p';
