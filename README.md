@@ -277,11 +277,11 @@ http://IP_SERVER
 
 Jika muncul halaman Apache2 default berarti berhasil.
 
-## 4.CTFd (Capture The Flag Platform)
+### 3.4 CTFd (Capture The Flag Platform)
 
 Panduan install CTFd dari GitHub dengan Docker.
 
-### 4.1 Persiapan Sistem
+### 3.5 Persiapan Sistem
 
 | Komponen | Minimal | Rekomendasi |
 |----------|---------|------------|
@@ -291,7 +291,7 @@ Panduan install CTFd dari GitHub dengan Docker.
 | Disk | 20 GB | 40 GB |
 | Docker | 20.10+ | Latest |
 
-### 4.2 Install Docker
+### 3.6 Install Docker
 
 ```bash 
 # 1. Update & install dependency
@@ -322,7 +322,7 @@ systemctl start docker
 usermod -aG docker admin
 ```
 
-### 4.3 Install Git & Clone CTFd
+### 3.7 Install Git & Clone CTFd
 
 ```bash
 # Install git
@@ -337,7 +337,7 @@ cd CTFd
 git checkout 3.9.0  # atau versi lain
 ```
 
-### 4.4 Konfigurasi docker-compose.yml
+### 3.8 Konfigurasi docker-compose.yml
 
 ```bash
 # Edit docker-compose.yml
@@ -404,7 +404,7 @@ networks:
         internal: true
 ```
 
-### 4.5 Jalankan CTFd
+### 3.9 Jalankan CTFd
 
 pastikan berada di folder CTFd
 ```bash
@@ -424,7 +424,7 @@ untuk melihat log
 docker-compose logs -f ctfd
 ```
 
-### 4.6 Setup Pertama (Setup Wizard)
+### 3.10 Setup Pertama (Setup Wizard)
 
 1. Buka browser ke `http://IP_SERVER:8000` atau `http://IP_SERVER:80`
 
@@ -440,7 +440,7 @@ docker-compose logs -f ctfd
 
 4. Klik **Submit**
 
-### 4.9 Konfigurasi Tambahan
+### 3.11 Konfigurasi Tambahan
 
 #### Upload Size (100MB)
 ```yaml
@@ -512,7 +512,7 @@ docker-compose exec -T db mysql -u root -p ctfd < backup_ctfd.sql
 | Slow Performance | Tambah WORKERS=2+ |
 | 502 Error | Cek logs: `docker-compose logs nginx` |
 
-### 4.12 Keamanan Dasar
+### 3.12 Keamanan Dasar
 
 ```bash
 # 1. Restart
