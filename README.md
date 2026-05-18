@@ -525,3 +525,22 @@ ufw enable
 ```
 
 ## 4. Mail Server
+
+## 4.1 Persiapan Server
+
+### Login sebagai root
+
+```bash
+su -
+```
+
+### Set hostname
+
+```bash
+hostnamectl set-hostname mail.local
+```
+nama bisa di ganti sesuai keinginan
+lalu cek hasilnya
+```bash
+hostname  # cek hasilnya
+```
