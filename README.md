@@ -8,7 +8,7 @@
 ## Daftar Isi
 
 1. [Penginstalan Debian 12](#1.Persiapan-penginstalan-debian)
-2. [File Server](#-File-Server)
+2. [File Server](#2-File-Server)
 3. [Web Server](#3.Web-Server)
 4. [Mail Server](#4.Mail-Server)
 
@@ -150,7 +150,7 @@ sudo timedatectl set-timezone Asia/Jakarta
 # Install useful tools
 sudo apt install curl wget git htop net-tools
 ```
-## 2.File Server
+## 2. File Server
 
 Panduan ini membahas cara setup file server dengan Samba di Debian 12.
 
