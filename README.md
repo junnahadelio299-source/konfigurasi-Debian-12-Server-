@@ -277,16 +277,6 @@ http://IP_SERVER
 
 Jika muncul halaman Apache2 default berarti berhasil.
 
-### 3.4 Buat Virtual Host
-
-```bash
-mkdir -p /var/www/example.com
-nano /etc/nginx/sites-available/example.com
-ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
-nginx -t
-systemctl restart nginx
-```
-
 ## 4.CTFd (Capture The Flag Platform)
 
 Panduan install CTFd dari GitHub dengan Docker.
@@ -303,28 +293,32 @@ Panduan install CTFd dari GitHub dengan Docker.
 
 ### 4.2 Install Docker
 
-```bash
-# Update & install dependencies
+```bash 
+# 1. Update & install dependency
 apt update
 apt install -y ca-certificates curl gnupg lsb-release
 
-# Add Docker GPG key
+# 2. Add Docker GPG key
 install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 chmod a+r /etc/apt/keyrings/docker.gpg
 
-# Add Docker repository
-echo "deb [arch=$(dpkg --print-architecture) https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+# 3. Add Docker repository (DEBIAN, bukan Ubuntu)
+echo \
+"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+https://download.docker.com/linux/debian \
+$(. /etc/os-release && echo $VERSION_CODENAME) stable" | \
+tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Install Docker
+# 4. Install Docker Engine
 apt update
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Enable & start Docker
+# 5. Enable & start Docker
 systemctl enable docker
 systemctl start docker
 
-# Add user to docker group
+# 6. (optional) add user ke docker group
 usermod -aG docker admin
 ```
 
@@ -343,36 +337,7 @@ cd CTFd
 git checkout 3.9.0  # atau versi lain
 ```
 
-### 4.4 Konfigurasi Environment
-
-```bash
-# Buat file .env
-nano .env
-```
-
-Isi dengan:
-
-```env
-UPLOAD_FOLDER=/var/uploads
-DATABASE_URL=mysql+pymysql://ctfd:ctfd_password@db/ctfd
-REDIS_URL=redis://cache:6379
-WORKERS=1
-WORKER_TIMEOUT=600
-LOG_FOLDER=/var/log/CTFd
-ACCESS_LOG=-
-ERROR_LOG=-
-REVERSE_PROXY=true
-MAX_CONTENT_LENGTH=104857600
-SECRET_KEY=generate_secret_key_anda
-```
-
-**Buat SECRET_KEY:**
-```bash
-openssl rand -hex(32)
-# Hasilkan: abcd1234... (copy hasil ini ke SECRET_KEY)
-```
-
-### 4.5 Konfigurasi docker-compose.yml
+### 4.4 Konfigurasi docker-compose.yml
 
 ```bash
 # Edit docker-compose.yml
@@ -382,128 +347,84 @@ nano docker-compose.yml
 Isi lengkap:
 
 ```yaml
-version: '3'
-
 services:
   ctfd:
-    image: ctfd/ctfd
+    build: .
     restart: always
     ports:
       - "8000:8000"
     environment:
       - UPLOAD_FOLDER=/var/uploads
-      - DATABASE_URL=mysql+pymysql://ctfd:ctfd_password@db/ctfd
+      - DATABASE_URL=mysql+pymysql://ctfd:ctfd@db/ctfd
       - REDIS_URL=redis://cache:6379
       - WORKERS=1
-      - WORKER_TIMEOUT=600
+      - WORKER_TIMEOUT=600 #menambahkan ini
       - LOG_FOLDER=/var/log/CTFd
       - ACCESS_LOG=-
       - ERROR_LOG=-
       - REVERSE_PROXY=true
-      - MAX_CONTENT_LENGTH=104857600
-      - SECRET_KEY=YOUR_SECRET_KEY_HERE
+      - MAX_CONTENT_LENGTH=104857600 #100mb
     volumes:
-      - ctfd_data:/var/uploads
-      - ctfd_logs:/var/log/CTFd
+      - .data/CTFd/logs:/var/log/CTFd
+      - .data/CTFd/uploads:/var/uploads:rw
+      - .:/opt/CTFd:ro
     depends_on:
       - db
-      - cache
     networks:
-      - internal
+        default:
+        internal:
 
   db:
     image: mariadb:10.11
     restart: always
     environment:
-      - MARIADB_ROOT_PASSWORD=root_password
+      - MARIADB_ROOT_PASSWORD=ctfd
       - MARIADB_USER=ctfd
-      - MARIADB_PASSWORD=ctfd_password
+      - MARIADB_PASSWORD=ctfd
       - MARIADB_DATABASE=ctfd
+      - MARIADB_AUTO_UPGRADE=1
     volumes:
-      - db_data:/var/lib/mysql
+      - .data/mysql:/var/lib/mysql
     networks:
-      - internal
+        internal:
+    # This command is required to set important mariadb defaults
     command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
 
   cache:
     image: redis:4
     restart: always
+    volumes:
+    - .data/redis:/data
     networks:
-      - internal
+        internal:
 
 networks:
-  internal:
-    driver: bridge
-
-volumes:
-  ctfd_data:
-  ctfd_logs:
-  db_data:
+    default:
+    internal:
+        internal: true
 ```
 
-### 4.6 Buat Folder Config Nginx
+### 4.5 Jalankan CTFd
 
+pastikan berada di folder CTFd
 ```bash
-mkdir -p conf/nginx
-nano conf/nginx/http.conf
+cd /home/website/ctf/CTFd
 ```
-
-Isi:
-
-```nginx
-events {
-    worker_connections 1024;
-}
-
-http {
-    upstream app_servers {
-        server ctfd:8000;
-    }
-
-    server {
-        listen 80;
-        server_name _;
-        
-        client_max_body_size 100M;
-        gzip on;
-
-        location / {
-            proxy_pass http://app_servers;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Host $server_name;
-        }
-
-        location /events {
-            proxy_pass http://app_servers;
-            proxy_http_version 1.1;
-            proxy_set_header Connection "";
-            chunked_transfer_encoding off;
-            proxy_buffering off;
-            proxy_cache off;
-        }
-    }
-}
-```
-
-### 4.7 Jalankan CTFd
-
-```bash
-# Pastikan di folder CTFd
-cd /opt/CTFd
-
+jalankan dan liat statusnya
+```bash 
 # Pull & run
 docker-compose up -d
 
 # Cek status
 docker-compose ps
-
+```
+untuk melihat log 
+```bash 
 # Lihat logs
 docker-compose logs -f ctfd
 ```
 
-### 4.8 Setup Pertama (Setup Wizard)
+### 4.6 Setup Pertama (Setup Wizard)
 
 1. Buka browser ke `http://IP_SERVER:8000` atau `http://IP_SERVER:80`
 
@@ -553,7 +474,7 @@ certbot --nginx -d domain.com
 certbot renew --dry-run
 ```
 
-### 4.10 Perintah Penting
+### Perintah Penting
 
 ```bash
 # Start CTFd
@@ -581,7 +502,7 @@ docker-compose exec db mysqldump -u root -p ctfd > backup_ctfd.sql
 docker-compose exec -T db mysql -u root -p ctfd < backup_ctfd.sql
 ```
 
-### 4.11 Troubleshooting
+### Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
@@ -594,14 +515,7 @@ docker-compose exec -T db mysql -u root -p ctfd < backup_ctfd.sql
 ### 4.12 Keamanan Dasar
 
 ```bash
-# Ganti Secrets
-# 1. Generate new SECRET_KEY
-openssl rand -hex(32)
-
-# 2. Update .env
-nano .env
-
-# 3. Restart
+# 1. Restart
 docker-compose restart
 
 # Batasi akses port
