@@ -165,12 +165,12 @@ apt install -y samba smbclient cifs-utils
 ### 2.2 Buat Folder File Server
 
 ```bash
-mkdir -p /home/nanzz/fileserver/dokumen
-mkdir -p /home/nanzz/fileserver/foto
-mkdir -p /home/nanzz/fileserver/video
-mkdir -p /home/nanzz/fileserver/backup
-chown -R nobody:nogroup /home/nanzz/fileserver
-chmod -R 777 /home/nanzz/fileserver
+mkdir -p /home/share
+```
+lalu beri izin agar semua orang bisa mengaksesnya
+```bash 
+chown -R nobody:nogroup /home/share
+chmod -R 777 /home/share
 ```
 
 ### 2.3 Konfigurasi Samba
@@ -192,7 +192,7 @@ Isi konfigurasi:
    create mask = 0775
    directory mask = 0775
 
-[NanzFileServer]
+[share]
    path = /home/nanzz/fileserver
    browseable = yes
    read only = no
@@ -225,12 +225,26 @@ pdbedit -L
 | Mac | `smb://10.25.10.51` |
 | Linux | `smb://10.25.10.51` |
 
+untuk android bisa menggunakan aplikasi file manager bawaan atau yang mendukung jaringan lan seperti Cx File explorer
+
 ### 2.7 Troubleshooting
 
+untuk mengecek apakah service samba berjalan
 ```bash
 systemctl status smbd
+```
+
+untuk mengecek apakah port samba bisa diakses 
+
+```bash 
 ss -tlnp | grep -E ":445|:139"
+```
+untuk mengecek log file
+```bash 
 tail -f /var/log/samba/log.smbd
+```
+untuk memulai ulang service samba 
+```bash 
 systemctl restart smbd
 ```
 
