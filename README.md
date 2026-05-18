@@ -545,7 +545,7 @@ lalu cek hasilnya
 hostname  # cek hasilnya
 ```
 
-## 2. Install Paket
+## 4.2 Install Paket
 
 ### Apache, PHP, dan dependensinya
 
@@ -581,7 +581,7 @@ Saat muncul dialog:
 
 ---
 
-## 3. Konfigurasi Postfix
+## 4.3 Konfigurasi Postfix
 
 Edit file konfigurasi utama Postfix:
 
@@ -622,7 +622,7 @@ systemctl restart postfix
 
 ---
 
-## 4. Konfigurasi Dovecot
+## 4.4 Konfigurasi Dovecot
 
 ### Set lokasi penyimpanan email (Maildir)
 
@@ -678,7 +678,7 @@ systemctl restart dovecot
 
 ---
 
-## 5. Buat User Email
+## 4.5 Buat User Email
 
 ### Tambah user Linux
 
@@ -703,7 +703,7 @@ chown -R mail2:mail2 /home/mail2/Maildir
 
 ---
 
-## 6. Konfigurasi Roundcube
+## 4.6 Konfigurasi Roundcube
 
 ### Edit file konfigurasi Roundcube
 
@@ -736,7 +736,7 @@ systemctl reload apache2
 
 ---
 
-## 7. Testing
+## 4.7 Testing
 
 ### Akses webmail di browser
 
