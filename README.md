@@ -683,22 +683,22 @@ systemctl restart dovecot
 ### Tambah user Linux
 
 ```bash
-adduser user1
-adduser user2
+adduser mail1
+adduser mail2
 ```
 
 ### Buat folder Maildir untuk masing-masing user
 
 ```bash
-maildirmake.dovecot /home/user1/Maildir
-maildirmake.dovecot /home/user2/Maildir
+maildirmake.dovecot /home/mail1/Maildir
+maildirmake.dovecot /home/mail2/Maildir
 ```
 
 ### Set kepemilikan folder
 
 ```bash
-chown -R user1:user1 /home/user1/Maildir
-chown -R user2:user2 /home/user2/Maildir
+chown -R mail1:mail1 /home/mail1/Maildir
+chown -R mail2:mail2 /home/mail2/Maildir
 ```
 
 ---
@@ -749,14 +749,14 @@ http://10.25.10.150/roundcube
 Login dengan:
 
 ```
-Username: user1@mail.local
-Password: password_user1
+Username: mail1@mail.local
+Password: password_mail1
 ```
 
 ### Coba kirim email
 
-- **From:** user1@mail.local
-- **To:** user2@mail.local
+- **From:** mail1@mail.local
+- **To:** mail2@mail.local
 - **Subject:** TEST
 
 Kalau email berhasil masuk ke inbox user2, berarti mail server sudah jalan dengan benar.
